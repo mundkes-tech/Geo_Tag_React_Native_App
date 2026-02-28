@@ -1,22 +1,22 @@
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import * as Location from 'expo-location';
-import React, { useRef, useState } from 'react';
+import { CameraView, useCameraPermissions } from "expo-camera";
+import * as Location from "expo-location";
+import React, { useRef, useState } from "react";
 import {
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
-import { Fonts } from '@/constants/theme';
-import { useAuth } from '@/context/auth-context';
-import { useThemeColor } from '@/hooks/use-theme-color';
-import { createEntry } from '@/lib/api';
-import { queueEntry } from '@/lib/offline-entries';
+import { Fonts } from "@/constants/theme";
+import { useAuth } from "@/context/auth-context";
+import { useThemeColor } from "@/hooks/use-theme-color";
+import { createEntry } from "@/lib/api";
+import { queueEntry } from "@/lib/offline-entries";
 
 type Coordinates = {
   latitude: number;
@@ -25,24 +25,24 @@ type Coordinates = {
 
 export default function CaptureScreen() {
   const { token } = useAuth();
-  const background = useThemeColor({}, 'background');
-  const card = useThemeColor({}, 'card');
-  const border = useThemeColor({}, 'border');
-  const muted = useThemeColor({}, 'muted');
-  const text = useThemeColor({}, 'text');
-  const tint = useThemeColor({}, 'tint');
+  const background = useThemeColor({}, "background");
+  const card = useThemeColor({}, "card");
+  const border = useThemeColor({}, "border");
+  const muted = useThemeColor({}, "muted");
+  const text = useThemeColor({}, "text");
+  const tint = useThemeColor({}, "tint");
   const styles = createStyles(background, card, border, muted, text, tint);
   const cameraRef = useRef<CameraView>(null);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
   const [uploading, setUploading] = useState(false);
 
   const resetForm = () => {
-    setTitle('');
-    setDescription('');
+    setTitle("");
+    setDescription("");
     setPhotoUri(null);
     setCoordinates(null);
   };
@@ -52,15 +52,16 @@ export default function CaptureScreen() {
       return;
     }
 
-    const locationPermission = await Location.requestForegroundPermissionsAsync();
+    const locationPermission =
+      await Location.requestForegroundPermissionsAsync();
     if (!locationPermission.granted) {
-      Alert.alert('Permission needed', 'Location permission is required');
+      Alert.alert("Permission needed", "Location permission is required");
       return;
     }
 
     const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
     if (!photo?.uri) {
-      Alert.alert('Error', 'Could not capture image');
+      Alert.alert("Error", "Could not capture image");
       return;
     }
 
@@ -81,33 +82,36 @@ export default function CaptureScreen() {
     }
 
     if (!title.trim() || !photoUri || !coordinates) {
-      Alert.alert('Missing data', 'Capture a photo, location, and add a title first');
+      Alert.alert(
+        "Missing data",
+        "Capture a photo, location, and add a title first",
+      );
       return;
     }
 
     const formData = new FormData();
-    formData.append('title', title.trim());
-    formData.append('description', description.trim());
-    formData.append('latitude', String(coordinates.latitude));
-    formData.append('longitude', String(coordinates.longitude));
-    formData.append('image', {
+    formData.append("title", title.trim());
+    formData.append("description", description.trim());
+    formData.append("latitude", String(coordinates.latitude));
+    formData.append("longitude", String(coordinates.longitude));
+    formData.append("image", {
       uri: photoUri,
       name: `entry-${Date.now()}.jpg`,
-      type: 'image/jpeg',
+      type: "image/jpeg",
     } as any);
 
     setUploading(true);
 
     try {
       await createEntry(token, formData);
-      Alert.alert('Success', 'Entry uploaded');
+      Alert.alert("Success", "Entry uploaded");
       resetForm();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Try again';
+      const message = error instanceof Error ? error.message : "Try again";
       const shouldQueue =
-        message.includes('Cannot reach API') ||
-        message.includes('Network request failed') ||
-        message.includes('Failed to fetch');
+        message.includes("Cannot reach API") ||
+        message.includes("Network request failed") ||
+        message.includes("Failed to fetch");
 
       if (shouldQueue) {
         await queueEntry({
@@ -117,10 +121,13 @@ export default function CaptureScreen() {
           longitude: coordinates.longitude,
           photoUri,
         });
-        Alert.alert('Saved offline', 'No internet. Entry queued and will sync later.');
+        Alert.alert(
+          "Saved offline",
+          "No internet. Entry queued and will sync later.",
+        );
         resetForm();
       } else {
-        Alert.alert('Upload failed', message);
+        Alert.alert("Upload failed", message);
       }
     } finally {
       setUploading(false);
@@ -135,7 +142,10 @@ export default function CaptureScreen() {
     return (
       <View style={styles.center}>
         <Text style={styles.permissionText}>Camera access is required</Text>
-        <TouchableOpacity style={styles.primaryButton} onPress={() => void requestCameraPermission()}>
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => void requestCameraPermission()}
+        >
           <Text style={styles.primaryButtonText}>Grant Camera Permission</Text>
         </TouchableOpacity>
       </View>
@@ -153,7 +163,10 @@ export default function CaptureScreen() {
       )}
 
       <View style={styles.row}>
-        <TouchableOpacity style={styles.primaryButton} onPress={() => void captureWithLocation()}>
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => void captureWithLocation()}
+        >
           <Text style={styles.primaryButtonText}>Capture + Location</Text>
         </TouchableOpacity>
         {photoUri && (
@@ -162,7 +175,8 @@ export default function CaptureScreen() {
             onPress={() => {
               setPhotoUri(null);
               setCoordinates(null);
-            }}>
+            }}
+          >
             <Text style={styles.secondaryButtonText}>Retake</Text>
           </TouchableOpacity>
         )}
@@ -188,14 +202,17 @@ export default function CaptureScreen() {
       <Text style={styles.coords}>
         {coordinates
           ? `Lat: ${coordinates.latitude.toFixed(6)}, Lng: ${coordinates.longitude.toFixed(6)}`
-          : 'Coordinates will appear after capture'}
+          : "Coordinates will appear after capture"}
       </Text>
 
       <TouchableOpacity
         disabled={uploading}
         style={[styles.primaryButton, uploading && styles.disabled]}
-        onPress={() => void submitEntry()}>
-        <Text style={styles.primaryButtonText}>{uploading ? 'Uploading...' : 'Upload Entry'}</Text>
+        onPress={() => void submitEntry()}
+      >
+        <Text style={styles.primaryButtonText}>
+          {uploading ? "Uploading..." : "Upload Entry"}
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -207,7 +224,7 @@ const createStyles = (
   border: string,
   muted: string,
   text: string,
-  tint: string
+  tint: string,
 ) =>
   StyleSheet.create({
     container: {
@@ -219,8 +236,8 @@ const createStyles = (
     },
     center: {
       flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
       padding: 20,
       backgroundColor: background,
     },
@@ -232,14 +249,14 @@ const createStyles = (
     },
     heading: {
       fontSize: 24,
-      fontWeight: '700',
+      fontWeight: "700",
       color: text,
       fontFamily: Fonts.rounded,
     },
     camera: {
       height: 320,
       borderRadius: 12,
-      overflow: 'hidden',
+      overflow: "hidden",
     },
     preview: {
       height: 320,
@@ -248,7 +265,7 @@ const createStyles = (
       borderColor: border,
     },
     row: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 10,
     },
     input: {
@@ -262,7 +279,7 @@ const createStyles = (
     },
     multiline: {
       minHeight: 90,
-      textAlignVertical: 'top',
+      textAlignVertical: "top",
     },
     coords: {
       color: muted,
@@ -273,12 +290,12 @@ const createStyles = (
       borderRadius: 10,
       paddingVertical: 12,
       paddingHorizontal: 14,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
     },
     primaryButtonText: {
       color: background,
-      fontWeight: '600',
+      fontWeight: "600",
       fontFamily: Fonts.sans,
     },
     secondaryButton: {
@@ -287,12 +304,12 @@ const createStyles = (
       borderRadius: 10,
       paddingVertical: 12,
       paddingHorizontal: 14,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
     },
     secondaryButtonText: {
       color: tint,
-      fontWeight: '600',
+      fontWeight: "600",
       fontFamily: Fonts.sans,
     },
     disabled: {

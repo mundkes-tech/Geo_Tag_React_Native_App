@@ -42,7 +42,6 @@ This project includes:
    ```
 
 4. Update `backend/.env` values:
-
    - `MONGODB_URI`
    - `JWT_SECRET`
    - `BASE_URL` (your backend URL)
@@ -78,7 +77,6 @@ Backend runs on `http://localhost:5000` by default.
    ```
 
    Notes:
-
    - For physical device, use your computer's LAN IP (not `localhost`).
    - For Android emulator, `http://10.0.2.2:5000/api` usually works.
 

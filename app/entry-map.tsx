@@ -1,36 +1,41 @@
-import { useLocalSearchParams } from 'expo-router';
-import React, { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import WebView from 'react-native-webview/lib/WebView';
+import { useLocalSearchParams } from "expo-router";
+import React, { useMemo } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import WebView from "react-native-webview/lib/WebView";
 
-import { Fonts } from '@/constants/theme';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { Fonts } from "@/constants/theme";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 function escapeHtml(value: string) {
   return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 export default function EntryMapScreen() {
-  const params = useLocalSearchParams<{ latitude?: string; longitude?: string; title?: string }>();
-  const background = useThemeColor({}, 'background');
-  const card = useThemeColor({}, 'card');
-  const border = useThemeColor({}, 'border');
-  const muted = useThemeColor({}, 'muted');
-  const text = useThemeColor({}, 'text');
+  const params = useLocalSearchParams<{
+    latitude?: string;
+    longitude?: string;
+    title?: string;
+  }>();
+  const background = useThemeColor({}, "background");
+  const card = useThemeColor({}, "card");
+  const border = useThemeColor({}, "border");
+  const muted = useThemeColor({}, "muted");
+  const text = useThemeColor({}, "text");
 
   const latitude = Number(params.latitude);
   const longitude = Number(params.longitude);
-  const title = (params.title || 'Entry location').toString();
-  const hasValidCoords = Number.isFinite(latitude) && Number.isFinite(longitude);
+  const title = (params.title || "Entry location").toString();
+  const hasValidCoords =
+    Number.isFinite(latitude) && Number.isFinite(longitude);
 
   const mapHtml = useMemo(() => {
     if (!hasValidCoords) {
-      return '';
+      return "";
     }
 
     const safeTitle = escapeHtml(title);
@@ -73,16 +78,29 @@ export default function EntryMapScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: background }]}> 
-      <View style={[styles.infoBox, { borderColor: border, backgroundColor: card }]}> 
-        <Text style={{ color: text, fontSize: 16, fontWeight: '600', fontFamily: Fonts.rounded }}>
+    <View style={[styles.container, { backgroundColor: background }]}>
+      <View
+        style={[styles.infoBox, { borderColor: border, backgroundColor: card }]}
+      >
+        <Text
+          style={{
+            color: text,
+            fontSize: 16,
+            fontWeight: "600",
+            fontFamily: Fonts.rounded,
+          }}
+        >
           {title}
         </Text>
         <Text style={{ color: muted, marginTop: 4, fontFamily: Fonts.sans }}>
           {latitude.toFixed(6)}, {longitude.toFixed(6)}
         </Text>
       </View>
-      <WebView source={{ html: mapHtml }} style={styles.map} originWhitelist={["*"]} />
+      <WebView
+        source={{ html: mapHtml }}
+        style={styles.map}
+        originWhitelist={["*"]}
+      />
     </View>
   );
 }
@@ -94,8 +112,8 @@ const styles = StyleSheet.create({
   },
   center: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 20,
   },
   infoBox: {
@@ -107,6 +125,6 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
     borderRadius: 12,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 });

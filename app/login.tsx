@@ -1,10 +1,17 @@
-import { Link, Redirect } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Link, Redirect } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+    Alert,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
-import { Fonts } from '@/constants/theme';
-import { useAuth } from '@/context/auth-context';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { Fonts } from "@/constants/theme";
+import { useAuth } from "@/context/auth-context";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 export default function LoginScreen() {
   const {
@@ -15,15 +22,15 @@ export default function LoginScreen() {
     hasBiometricCredentials,
     isBootstrapping,
   } = useAuth();
-  const background = useThemeColor({}, 'background');
-  const card = useThemeColor({}, 'card');
-  const border = useThemeColor({}, 'border');
-  const muted = useThemeColor({}, 'muted');
-  const text = useThemeColor({}, 'text');
-  const tint = useThemeColor({}, 'tint');
+  const background = useThemeColor({}, "background");
+  const card = useThemeColor({}, "card");
+  const border = useThemeColor({}, "border");
+  const muted = useThemeColor({}, "muted");
+  const text = useThemeColor({}, "text");
+  const tint = useThemeColor({}, "tint");
   const styles = createStyles(background, card, border, text, tint);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(false);
   const [enableBiometric, setEnableBiometric] = useState(false);
@@ -42,7 +49,7 @@ export default function LoginScreen() {
 
   const submit = async () => {
     if (!email.trim() || !password) {
-      Alert.alert('Missing details', 'Please enter email and password');
+      Alert.alert("Missing details", "Please enter email and password");
       return;
     }
 
@@ -53,7 +60,10 @@ export default function LoginScreen() {
         await saveBiometricCredentials(email.trim(), password);
       }
     } catch (error) {
-      Alert.alert('Login failed', error instanceof Error ? error.message : 'Try again');
+      Alert.alert(
+        "Login failed",
+        error instanceof Error ? error.message : "Try again",
+      );
     } finally {
       setLoading(false);
     }
@@ -64,7 +74,10 @@ export default function LoginScreen() {
     try {
       await loginWithBiometrics();
     } catch (error) {
-      Alert.alert('Biometric login failed', error instanceof Error ? error.message : 'Try again');
+      Alert.alert(
+        "Biometric login failed",
+        error instanceof Error ? error.message : "Try again",
+      );
     } finally {
       setBiometricLoading(false);
     }
@@ -91,23 +104,31 @@ export default function LoginScreen() {
           placeholderTextColor={muted}
           style={styles.input}
         />
-        <TouchableOpacity style={styles.button} onPress={() => void submit()} disabled={loading}>
-          <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Login'}</Text>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => void submit()}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? "Logging in..." : "Login"}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.secondaryButton, { borderColor: border }]}
-          onPress={() => setEnableBiometric((prev) => !prev)}>
+          onPress={() => setEnableBiometric((prev) => !prev)}
+        >
           <Text style={[styles.secondaryButtonText, { color: text }]}>
-            {enableBiometric ? '✓' : '○'} Enable biometric login on this device
+            {enableBiometric ? "✓" : "○"} Enable biometric login on this device
           </Text>
         </TouchableOpacity>
         {canUseBiometricLogin && (
           <TouchableOpacity
             style={[styles.secondaryButton, { borderColor: tint }]}
             onPress={() => void biometricLogin()}
-            disabled={biometricLoading}>
+            disabled={biometricLoading}
+          >
             <Text style={[styles.secondaryButtonText, { color: tint }]}>
-              {biometricLoading ? 'Authenticating...' : 'Login with Biometrics'}
+              {biometricLoading ? "Authenticating..." : "Login with Biometrics"}
             </Text>
           </TouchableOpacity>
         )}
@@ -124,12 +145,12 @@ const createStyles = (
   card: string,
   border: string,
   text: string,
-  tint: string
+  tint: string,
 ) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      justifyContent: 'center',
+      justifyContent: "center",
       backgroundColor: background,
       paddingHorizontal: 20,
     },
@@ -143,7 +164,7 @@ const createStyles = (
     },
     title: {
       fontSize: 28,
-      fontWeight: '700',
+      fontWeight: "700",
       marginBottom: 12,
       color: text,
       fontFamily: Fonts.rounded,
@@ -161,11 +182,11 @@ const createStyles = (
       backgroundColor: tint,
       borderRadius: 10,
       padding: 12,
-      alignItems: 'center',
+      alignItems: "center",
     },
     buttonText: {
       color: background,
-      fontWeight: '600',
+      fontWeight: "600",
       fontFamily: Fonts.sans,
     },
     link: {
@@ -177,10 +198,10 @@ const createStyles = (
       borderWidth: 1,
       borderRadius: 10,
       padding: 12,
-      alignItems: 'center',
+      alignItems: "center",
     },
     secondaryButtonText: {
       fontFamily: Fonts.sans,
-      fontWeight: '600',
+      fontWeight: "600",
     },
   });

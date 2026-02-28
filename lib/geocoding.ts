@@ -15,13 +15,13 @@ export async function reverseGeocode(latitude: number, longitude: number) {
     const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`;
     const response = await fetch(url, {
       headers: {
-        'Accept-Language': 'en',
-        'User-Agent': 'GeoTag/1.0',
+        "Accept-Language": "en",
+        "User-Agent": "GeoTag/1.0",
       },
     });
 
     if (!response.ok) {
-      return 'Unknown location';
+      return "Unknown location";
     }
 
     const data = (await response.json()) as {
@@ -36,17 +36,20 @@ export async function reverseGeocode(latitude: number, longitude: number) {
     };
 
     const locality =
-      data.address?.city || data.address?.town || data.address?.village || data.address?.state;
+      data.address?.city ||
+      data.address?.town ||
+      data.address?.village ||
+      data.address?.state;
     const country = data.address?.country;
 
     const label =
       (locality && country && `${locality}, ${country}`) ||
       data.display_name ||
-      'Unknown location';
+      "Unknown location";
 
     geocodeCache.set(key, label);
     return label;
   } catch {
-    return 'Unknown location';
+    return "Unknown location";
   }
 }

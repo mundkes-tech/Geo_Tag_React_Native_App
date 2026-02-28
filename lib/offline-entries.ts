@@ -1,8 +1,8 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { createEntry } from '@/lib/api';
+import { createEntry } from "@/lib/api";
 
-const OFFLINE_QUEUE_KEY = 'geotag-offline-entry-queue';
+const OFFLINE_QUEUE_KEY = "geotag-offline-entry-queue";
 
 export type QueuedEntry = {
   id: string;
@@ -36,7 +36,7 @@ export async function getQueuedEntries() {
   return readQueue();
 }
 
-export async function queueEntry(entry: Omit<QueuedEntry, 'id' | 'createdAt'>) {
+export async function queueEntry(entry: Omit<QueuedEntry, "id" | "createdAt">) {
   const queue = await readQueue();
 
   const queuedEntry: QueuedEntry = {
@@ -59,14 +59,14 @@ export async function removeQueuedEntry(id: string) {
 
 function createFormData(entry: QueuedEntry) {
   const formData = new FormData();
-  formData.append('title', entry.title);
-  formData.append('description', entry.description);
-  formData.append('latitude', String(entry.latitude));
-  formData.append('longitude', String(entry.longitude));
-  formData.append('image', {
+  formData.append("title", entry.title);
+  formData.append("description", entry.description);
+  formData.append("latitude", String(entry.latitude));
+  formData.append("longitude", String(entry.longitude));
+  formData.append("image", {
     uri: entry.photoUri,
     name: `entry-${Date.now()}.jpg`,
-    type: 'image/jpeg',
+    type: "image/jpeg",
   } as any);
 
   return formData;
