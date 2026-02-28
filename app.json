@@ -62,7 +62,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "apiUrl": "http://10.86.79.137:5000/api",
+      "apiUrl": "https://geo-tag-react-native-app.onrender.com/api",
       "router": {},
       "eas": {
         "projectId": "f01766ea-7d04-49d3-addb-c6b0d87cb782"
