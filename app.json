@@ -9,9 +9,22 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow GeoTag to take photos for entries.",
+        "NSLocationWhenInUseUsageDescription": "Allow GeoTag to attach your current location to entries.",
+        "NSFaceIDUsageDescription": "Allow GeoTag to use Face ID for secure login."
+      }
     },
     "android": {
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -19,7 +32,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.mohilmundke.geotag"
     },
     "web": {
       "output": "static",
@@ -27,6 +41,9 @@
     },
     "plugins": [
       "expo-router",
+      "expo-camera",
+      "expo-location",
+      "expo-local-authentication",
       [
         "expo-splash-screen",
         {
@@ -43,6 +60,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "apiUrl": "http://10.86.79.137:5000/api",
+      "router": {},
+      "eas": {
+        "projectId": "f01766ea-7d04-49d3-addb-c6b0d87cb782"
+      }
     }
   }
 }

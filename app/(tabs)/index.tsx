@@ -1,98 +1,445 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { Fonts } from '@/constants/theme';
+import { useAuth } from '@/context/auth-context';
+import { useThemeColor } from '@/hooks/use-theme-color';
+import { deleteEntry, Entry, getEntries } from '@/lib/api';
+import { reverseGeocode } from '@/lib/geocoding';
+import { getQueuedEntries, removeQueuedEntry, syncQueuedEntries } from '@/lib/offline-entries';
 
-export default function HomeScreen() {
+type FeedEntry = Entry & {
+  syncStatus: 'synced' | 'pending';
+  localId?: string;
+  placeName?: string;
+};
+
+function EntryCard({
+  item,
+  text,
+  border,
+  muted,
+  card,
+  tint,
+  onViewMap,
+  onEdit,
+  onDelete,
+}: {
+  item: FeedEntry;
+  text: string;
+  border: string;
+  muted: string;
+  card: string;
+  tint: string;
+  onViewMap: (entry: Entry) => void;
+  onEdit: (entry: Entry) => void;
+  onDelete: (entry: Entry) => void;
+}) {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <View style={[styles.card, { borderColor: border, backgroundColor: card }]}>
+      <Image source={{ uri: item.imageUrl }} style={[styles.image, { borderColor: border }]} />
+      <Text style={[styles.title, { color: text }]}>{item.title}</Text>
+      {!!item.description && (
+        <Text style={[styles.description, { color: text }]}>{item.description}</Text>
+      )}
+      <Text style={[styles.meta, { color: muted }]}>
+        {item.latitude.toFixed(6)}, {item.longitude.toFixed(6)}
+      </Text>
+      {!!item.placeName && <Text style={[styles.meta, { color: muted }]}>{item.placeName}</Text>}
+      <Text style={[styles.meta, { color: muted }]}>{new Date(item.createdAt).toLocaleString()}</Text>
+      <View
+        style={[
+          styles.badge,
+          {
+            backgroundColor: item.syncStatus === 'pending' ? '#f59e0b22' : '#16a34a22',
+            borderColor: item.syncStatus === 'pending' ? '#f59e0b' : '#16a34a',
+          },
+        ]}>
+        <Text
+          style={{
+            color: item.syncStatus === 'pending' ? '#b45309' : '#166534',
+            fontFamily: Fonts.sans,
+            fontWeight: '600',
+            fontSize: 12,
+          }}>
+          {item.syncStatus === 'pending' ? 'Pending sync' : 'Synced'}
+        </Text>
+      </View>
+      <View style={styles.actionsRow}>
+        <TouchableOpacity
+          onPress={() => onViewMap(item)}
+          style={[styles.mapButton, { borderColor: tint, backgroundColor: card }]}
+        >
+          <Text style={{ color: tint, fontWeight: '600', fontFamily: Fonts.sans }}>Map</Text>
+        </TouchableOpacity>
+        {item.syncStatus === 'synced' && (
+          <TouchableOpacity
+            onPress={() => onEdit(item)}
+            style={[styles.mapButton, { borderColor: tint, backgroundColor: card }]}
+          >
+            <Text style={{ color: tint, fontWeight: '600', fontFamily: Fonts.sans }}>Edit</Text>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity
+          onPress={() => onDelete(item)}
+          style={[styles.mapButton, { borderColor: '#dc2626', backgroundColor: card }]}
+        >
+          <Text style={{ color: '#dc2626', fontWeight: '600', fontFamily: Fonts.sans }}>Delete</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+export default function EntriesScreen() {
+  const router = useRouter();
+  const { token, user, logoutUser } = useAuth();
+  const background = useThemeColor({}, 'background');
+  const text = useThemeColor({}, 'text');
+  const border = useThemeColor({}, 'border');
+  const muted = useThemeColor({}, 'muted');
+  const card = useThemeColor({}, 'card');
+  const tint = useThemeColor({}, 'tint');
+  const [entries, setEntries] = useState<FeedEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [syncingNow, setSyncingNow] = useState(false);
+  const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null);
+
+  const pendingCount = entries.filter((entry) => entry.syncStatus === 'pending').length;
+
+  const lastSyncLabel = lastSyncAt
+    ? `Last synced ${lastSyncAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+    : 'Not synced yet';
+
+  const handleDelete = (entry: FeedEntry) => {
+    if (!token) {
+      return;
+    }
+
+    Alert.alert('Delete entry', `Delete "${entry.title}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            if (entry.syncStatus === 'pending' && entry.localId) {
+              await removeQueuedEntry(entry.localId);
+            } else {
+              await deleteEntry(token, entry._id);
+            }
+            await loadEntries(true);
+          } catch (error) {
+            Alert.alert('Error', error instanceof Error ? error.message : 'Failed to delete entry');
+          }
+        },
+      },
+    ]);
+  };
+
+  const loadEntries = useCallback(async (isRefresh = false) => {
+    if (!token) {
+      return;
+    }
+
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+
+    try {
+      await syncQueuedEntries(token);
+
+      const [syncedEntries, queuedEntries] = await Promise.all([getEntries(token), getQueuedEntries()]);
+
+      const pendingEntries: FeedEntry[] = queuedEntries.map((entry) => ({
+        _id: entry.id,
+        localId: entry.id,
+        imageUrl: entry.photoUri,
+        latitude: entry.latitude,
+        longitude: entry.longitude,
+        title: entry.title,
+        description: entry.description,
+        createdAt: entry.createdAt,
+        syncStatus: 'pending',
+      }));
+
+      const remoteEntries: FeedEntry[] = syncedEntries.map((entry) => ({
+        ...entry,
+        syncStatus: 'synced',
+      }));
+
+      const mergedEntries = [...pendingEntries, ...remoteEntries].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      const entriesWithPlaces: FeedEntry[] = await Promise.all(
+        mergedEntries.map(async (entry) => ({
+          ...entry,
+          placeName: await reverseGeocode(entry.latitude, entry.longitude),
+        }))
+      );
+
+      setEntries(entriesWithPlaces);
+      setLastSyncAt(new Date());
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to load entries');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [token]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadEntries();
+    }, [loadEntries])
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  const handleSyncNow = async () => {
+    if (!token || syncingNow) {
+      return;
+    }
+
+    setSyncingNow(true);
+    try {
+      const result = await syncQueuedEntries(token);
+      await loadEntries(true);
+      Alert.alert(
+        'Sync complete',
+        result.syncedCount > 0
+          ? `${result.syncedCount} entry${result.syncedCount > 1 ? 'ies' : 'y'} synced${
+              result.remainingCount > 0 ? `, ${result.remainingCount} still pending` : ''
+            }.`
+          : result.remainingCount > 0
+            ? `${result.remainingCount} entries are still pending.`
+            : 'No pending entries.'
+      );
+    } catch (error) {
+      Alert.alert('Sync failed', error instanceof Error ? error.message : 'Please try again');
+    } finally {
+      setSyncingNow(false);
+    }
+  };
+
+  return (
+    <View style={[styles.container, { backgroundColor: background }]}> 
+      <View style={styles.headerRow}>
+        <View>
+          <Text style={[styles.headerTitle, { color: text }]}>Your Entries</Text>
+          <Text style={[styles.headerSub, { color: muted }]}>Hi, {user?.name ?? 'User'}</Text>
+          <View style={[styles.pendingBadge, { borderColor: border, backgroundColor: card }]}> 
+            <Text style={[styles.pendingBadgeText, { color: muted }]}>
+              {pendingCount} pending upload{pendingCount === 1 ? '' : 's'}
+            </Text>
+          </View>
+          <Text style={[styles.lastSyncText, { color: muted }]}>{lastSyncLabel}</Text>
+        </View>
+        <View style={styles.headerActions}>
+          {pendingCount > 0 && (
+            <TouchableOpacity
+              onPress={() => void handleSyncNow()}
+              style={[styles.syncButton, { borderColor: tint, backgroundColor: card }]}
+              disabled={syncingNow}>
+              <Text style={[styles.syncButtonText, { color: tint }]}>
+                {syncingNow ? 'Syncing...' : 'Sync now'}
+              </Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={() => void logoutUser()} style={[styles.logoutButton, { backgroundColor: tint }]}>
+            <Text style={[styles.logoutText, { color: background }]}>Logout</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <FlatList
+        data={entries}
+        keyExtractor={(item) => item._id}
+        renderItem={({ item }) => (
+          <EntryCard
+            item={item}
+            text={text}
+            border={border}
+            muted={muted}
+            card={card}
+            tint={tint}
+            onViewMap={(entry) =>
+              router.push({
+                pathname: '/entry-map',
+                params: {
+                  latitude: String(entry.latitude),
+                  longitude: String(entry.longitude),
+                  title: entry.title,
+                },
+              })
+            }
+            onEdit={(entry) =>
+              router.push({
+                pathname: '/edit-entry',
+                params: {
+                  id: entry._id,
+                  title: entry.title,
+                  description: entry.description,
+                },
+              })
+            }
+            onDelete={handleDelete}
+          />
+        )}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={() => void loadEntries(true)} />
+        }
+        ListEmptyComponent={
+          <Text style={[styles.empty, { color: muted }]}>No entries yet. Capture your first one!</Text>
+        }
+        contentContainerStyle={styles.listContent}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    paddingTop: 56,
+    paddingHorizontal: 16,
+  },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    fontFamily: Fonts.rounded,
+  },
+  headerSub: {
+    marginTop: 2,
+    fontFamily: Fonts.sans,
+  },
+  logoutButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  logoutText: {
+    fontWeight: '600',
+    fontFamily: Fonts.sans,
+  },
+  headerActions: {
+    alignItems: 'flex-end',
     gap: 8,
   },
-  stepContainer: {
-    gap: 8,
+  syncButton: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  syncButtonText: {
+    fontFamily: Fonts.sans,
+    fontWeight: '600',
+  },
+  pendingBadge: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  pendingBadgeText: {
+    fontFamily: Fonts.sans,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  lastSyncText: {
+    marginTop: 6,
+    fontFamily: Fonts.sans,
+    fontSize: 12,
+  },
+  listContent: {
+    paddingBottom: 24,
+    gap: 12,
+  },
+  card: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 12,
+  },
+  image: {
+    width: '100%',
+    height: 180,
+    borderWidth: 1,
+    borderRadius: 10,
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+    fontFamily: Fonts.rounded,
+  },
+  description: {
+    marginTop: 4,
+    fontFamily: Fonts.sans,
+  },
+  meta: {
+    marginTop: 4,
+    fontSize: 12,
+    fontFamily: Fonts.sans,
+  },
+  mapButton: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
+  badge: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 4,
+  },
+  empty: {
+    textAlign: 'center',
+    marginTop: 40,
+    fontFamily: Fonts.sans,
   },
 });

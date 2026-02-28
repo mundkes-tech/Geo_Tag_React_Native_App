@@ -1,50 +1,107 @@
-# Welcome to your Expo app 👋
+# GeoTag App (Expo + Express + MongoDB)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This project includes:
 
-## Get started
+- Expo React Native app (frontend)
+- Node.js + Express API (backend)
+- MongoDB database
 
-1. Install dependencies
+## Features Implemented
+
+- Register and login with JWT
+- JWT stored securely using `expo-secure-store`
+- Capture photo with camera
+- Get current GPS coordinates
+- Upload image + location + title + description using `multipart/form-data`
+- Fetch and display previous user entries
+- Pull-to-refresh on entries screen
+
+## Project Structure
+
+- Frontend: root project (`app`, `components`, etc.)
+- Backend: `backend/`
+
+## 1) Backend Setup
+
+1. Go to backend folder:
+
+   ```bash
+   cd backend
+   ```
+
+2. Install dependencies:
 
    ```bash
    npm install
    ```
 
-2. Start the app
+3. Create environment file:
 
    ```bash
-   npx expo start
+   copy .env.example .env
    ```
 
-In the output, you'll find options to open the app in a
+4. Update `backend/.env` values:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+   - `MONGODB_URI`
+   - `JWT_SECRET`
+   - `BASE_URL` (your backend URL)
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+5. Start backend:
 
-## Get a fresh project
+   ```bash
+   npm run dev
+   ```
 
-When you're ready, run:
+Backend runs on `http://localhost:5000` by default.
 
-```bash
-npm run reset-project
-```
+## 2) Frontend Setup
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+1. Go to project root:
 
-## Learn more
+   ```bash
+   cd ..
+   ```
 
-To learn more about developing your project with Expo, look at the following resources:
+2. Install frontend dependencies:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+   ```bash
+   npm install
+   ```
 
-## Join the community
+3. Update API URL in `app.json`:
 
-Join our community of developers creating universal apps.
+   ```json
+   "extra": {
+     "apiUrl": "http://YOUR_MACHINE_IP:5000/api"
+   }
+   ```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+   Notes:
+
+   - For physical device, use your computer's LAN IP (not `localhost`).
+   - For Android emulator, `http://10.0.2.2:5000/api` usually works.
+
+4. Start Expo app:
+
+   ```bash
+   npm run start
+   ```
+
+## API Endpoints
+
+### Auth
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+
+### Entries (Protected)
+
+- `POST /api/entries` (multipart: `image`, `title`, `description`, `latitude`, `longitude`)
+- `GET /api/entries`
+- `DELETE /api/entries/:id`
+
+## Notes
+
+- Uploaded images are stored in `backend/uploads` and served at `/uploads/<filename>`.
+- Delete API is implemented on backend and ready to use.
