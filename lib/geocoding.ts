@@ -1,4 +1,4 @@
-// const geocodeCache = new Map<string, string>();
+const geocodeCache = new Map<string, string>();
 
 function cacheKey(latitude: number, longitude: number) {
   return `${latitude.toFixed(4)},${longitude.toFixed(4)}`;
