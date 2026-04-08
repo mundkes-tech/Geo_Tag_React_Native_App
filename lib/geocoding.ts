@@ -1,8 +1,3 @@
-
-
-
-
-
 const geocodeCache = new Map<string, string>();
 
 function cacheKey(latitude: number, longitude: number) {
